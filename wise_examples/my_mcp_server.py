@@ -24,9 +24,15 @@ If you don't set TOOL_PREFIX, it defaults to "firstname_lastname".
 import os
 from typing import List
 
+from dotenv import load_dotenv
 from mcp.types import ToolAnnotations
 from north_mcp_python_sdk import NorthMCPServer
 from pydantic import BaseModel, Field
+
+
+# Load environment variables from a local .env file (if present).
+# This makes it easy to configure TOOL_PREFIX / MCP_PORT without exporting them.
+load_dotenv()
 
 # ---- Configuration ----
 

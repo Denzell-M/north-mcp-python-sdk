@@ -24,6 +24,7 @@ If you don't set TOOL_PREFIX, it defaults to "firstname_lastname".
 import os
 from typing import List
 
+from mcp.types import ToolAnnotations
 from north_mcp_python_sdk import NorthMCPServer
 from pydantic import BaseModel, Field
 
@@ -71,7 +72,10 @@ def multiply(a: int, b: int) -> int:
     return a * b
 
 
-@mcp.tool(name=_tool_name("divide"), annotations={"destructiveHint": True})
+@mcp.tool(
+    name=_tool_name("divide"),
+    annotations=ToolAnnotations(destructiveHint=True),
+)
 def divide(a: int, b: int) -> float:
     """Divide two numbers."""
     if b == 0:

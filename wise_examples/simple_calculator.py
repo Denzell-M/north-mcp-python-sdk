@@ -1,7 +1,9 @@
 
 from typing import List
-from pydantic import BaseModel, Field
+
+from mcp.types import ToolAnnotations
 from north_mcp_python_sdk import NorthMCPServer
+from pydantic import BaseModel, Field
 
 _default_port = 3001
 
@@ -34,7 +36,7 @@ def firstname_lastname_multiply(a: int, b: int) -> int:
 # The destructiveHint doesn’t prevent division by zero,
 # but it allows the system to warn or double-check with the user before running potentially dangerous operations. 
 # In this case, it’s about safety and user awareness, not automatic error handling.
-@mcp.tool(annotations={"destructiveHint":  True})
+@mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
 def firstname_lastname_divide(a: int, b: int) -> int:
     """Divide two numbers"""
     return int(a / b)

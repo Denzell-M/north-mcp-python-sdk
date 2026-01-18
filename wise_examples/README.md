@@ -1,336 +1,290 @@
-## Adding your own MCP server walkthough ##
+# WISE North MCP Workshop — Quickstart (Recommended)
 
-### 1. Get your environment set up ###
+This directory contains **example MCP servers** you can run and register into **North**.
+
+> If you came here looking for `import north` / `north.Client(...).chat(...)`: that is **not** used in this repo.
+> This repo is for building **MCP servers** using `north_mcp_python_sdk.NorthMCPServer`.
+
+## Fastest path: run the working demo server
+
+We included a minimal, known-good server at:
+
+- `my_mcp_server.py`
+
+It exposes a few calculator tools and is set up to avoid the most common North issue: **tool name collisions**.
+
+### 0) One-time setup
 
 ```bash
 # clone this repo
 git clone https://github.com/cohere-ai/north-mcp-python-sdk.git
-
-# enter the repo
 cd north-mcp-python-sdk
 
-# switch to our wise branch
+# switch to the WISE branch
 git switch wise_2026_conference
 
-# go into our example directory
+# enter examples
 cd wise_examples
 
-# install uv 
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# install the requirements
+# install dependencies
 uv sync
-
-# activate the newly created environment
-source .venv/bin/activate
 ```
 
-To install ngrok follow the instructions here https://ngrok.com/download
+### 1) Run the server locally
 
-If you have not previously run ngrok you will get the following error when running 
-```bash 
-ngrok http <port>
+Pick a unique tool prefix (must be globally unique in North):
 
-ValueError: ('failed to connect session', 'Usage of ngrok requires a verified account and authtoken.\
-Sign up for an account: https://dashboard.ngrok.com/signup\n \
-Install your authtoken: https://dashboard.ngrok.com/get-started/your-authtoken', 'ERR_NGROK_4018')
-```
-
-
-You must create an account and get your authtoken
 ```bash
-https://dashboard.ngrok.com/signup
-https://dashboard.ngrok.com/get-started/your-authtoken
+export TOOL_PREFIX="yourname_yourlastname"  # e.g. denzell_twerdohl_lib
+export MCP_PORT=3001
+
+uv run python my_mcp_server.py
 ```
 
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/b8cc8b48-5e5d-415d-bf55-975731fe8ac9"
-    width="600"
-  />
-</p>
+Leave this terminal running.
 
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/986304ca-6caa-4863-9997-a250221ce1c9"
-    width="900"
-  />
-</p>
+### 2) Expose the server publicly (ngrok)
 
-To add your authtoken you can run 
-```bash 
+In a new terminal:
+
+```bash
+ngrok http 3001
+```
+
+Copy the **https** Forwarding URL (example):
+
+- `https://abc123.ngrok-free.app`
+
+### 3) Register the server in North
+
+1. Get your North token here:
+   - https://gtxcc.democloud.cohere.com/developer/python
+
+2. Export variables (use your ngrok URL **without** `/mcp`):
+
+```bash
+export NORTH_TOKEN="<paste your north token>"
+export HOST="https://gtxcc.democloud.cohere.com/api"
+export URL="https://abc123.ngrok-free.app"
+```
+
+3. Register:
+
+```bash
+curl --location "${HOST}/internal/v1/mcp_servers" \
+  --header "Content-Type: application/json" \
+  --header "Authorization: Bearer ${NORTH_TOKEN}" \
+  --data '{
+    "url": "'"${URL}"'",
+    "name": "My WISE MCP Server"
+  }'
+```
+
+4. Open North and try your tools:
+   - https://gtxcc.democloud.cohere.com/
+
+### Notes / troubleshooting
+
+- **Tool names must be unique**: that’s why `TOOL_PREFIX` exists.
+- **Keep tokens secret**: don’t paste them into chat, screenshots, or public repos.
+
+---
+
+# Detailed walkthrough (cleaned up)
+
+This section is a more explicit version of the original walkthrough, with less duplication and clearer “what goes where”.
+
+## 1) Prerequisites
+
+- **Python 3.11+**
+- **uv**: <https://astral.sh/uv>
+- **ngrok**: <https://ngrok.com/download>
+
+### Install / configure ngrok (if you’ve never used it)
+
+If `ngrok http <port>` fails with an “authtoken required” error, do:
+
+1. Create an account: <https://dashboard.ngrok.com/signup>
+2. Find your authtoken: <https://dashboard.ngrok.com/get-started/your-authtoken>
+3. Configure it:
+
+```bash
 ngrok config add-authtoken $YOUR_AUTHTOKEN
 ```
-<br />
 
----
+## 2) Pick a starting server
 
-<br />
+You have three good starting points:
 
-### 2. Create your MCP servers
+- **`my_mcp_server.py`** (recommended): minimal + already set up for unique tool names via `TOOL_PREFIX`
+- **`simple_calculator.py`**: more tools + shows annotations like `destructiveHint`
+- **`simple_calendar.py`**: Google Calendar example (requires Google OAuth token)
+
+If you build your own server, copy one of these files and modify it.
+
+## 3) Make tool names unique (important)
+
+North requires tool names to be globally unique.
+
+### Option A (recommended): use `TOOL_PREFIX`
+
+`my_mcp_server.py` supports a prefix automatically:
 
 ```bash
-code simple_calculator.py
-code <mcp_server_filename>
+export TOOL_PREFIX="first_last_project"   # must be unique
+uv run python my_mcp_server.py
 ```
 
+### Option B: rename your tool functions
 
-Start your server with 
+In `simple_calculator.py` / `simple_calendar.py`, rename tool functions:
+
+- from: `firstname_lastname_add`
+- to: `denzell_twerdohl_lib_add`
+
+## 4) Run the server locally
+
+Run one of these:
+
 ```bash
-uv run <mcp_server_filename>
+# recommended demo
+uv run python my_mcp_server.py
+
+# or calculator example
+uv run python simple_calculator.py
+
+# or calendar example
+uv run python simple_calendar.py
 ```
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/53c510f7-39b6-4e71-bd84-9c65bfd99996"
-    width="600"
-  />
-</p>
 
+Each script declares a port near the top. Common defaults:
 
+- calculator: `3001`
+- calendar: `3002`
 
-Start your ngrok server with
+## 5) Expose the server via ngrok
+
+In a second terminal:
+
 ```bash
 ngrok http <port>
-ie. ngrok http 3001
-```
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/f05a0b4c-980b-45cc-8354-96af3032799d"
-    width="600"
-  />
-</p>
-
-
-<br />
-
----
-
-<br />
-
-### 3. (Optional) Hard-code your connector credentials
-
-In some instances your MCP server will need to connect to another service such as the google api (for google calendar, gmail, drive, etc.) or spotify, linear, etc.
-
-Here's how to get the credentials for a common connector: Google API
-
-
-
-Step-by-step to get OAuth Client ID and Secret:
-
-1. Go to https://console.cloud.google.com
-2. Create/Select a Project:
-3. Click the project dropdown at the top
-4. Click "New Project" or select an existing one
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/b99aa112-ccff-4f96-93df-f5f232b9eaf8"
-    width="600"
-  />
-</p>
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/0585d53a-1cfe-408c-b086-15a56622c0da"
-    width="600"
-  />
-</p>
-
-Enable Calendar API:
-
-5. Go to "APIs & Services" → "Library" (left sidebar). Note if it's not in the left sidebar then click on <code>View all Products</code> at the bottom left-hand side of the screen to view the Library.
-6. Search for "Google Calendar API"
-7. Click it and press "Enable"
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/cca3cefd-b6f1-4111-84fa-e412f0fb689c"
-    width="600"
-  />
-</p>
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/b39b9765-b8a5-441b-a4bf-f89340fd702a"
-    width="600"
-  />
-</p>
-
-
-Create OAuth Credentials:
-
-8. Go to "APIs & Services" → "Credentials" (left sidebar)
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/cca3cefd-b6f1-4111-84fa-e412f0fb689c"
-    width="600"
-  />
-</p>
-
-9. Click "Create Credentials" → "OAuth client ID"
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/65f7577a-f871-4212-800e-0bc760633115"
-    width="600"
-  />
-</p>
-
-10. If prompted, configure the OAuth consent screen first:
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/c2d136da-28bf-42f2-83dd-6cf8ee4d8a8c"
-    width="600"
-  />
-</p>
-
-11. Fill in app name (e.g., "My Calendar App")
-12. Add your email
-13. Choose "External"
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/f1cb0ccd-0d60-4569-a5bc-c377d2e80153"
-    width="600"
-  />
-</p>
-
-
-Back to Create OAuth client ID:
-
-14. Choose "Desktop app" as Application type
-15. Give it a name (e.g., "Calendar Desktop Client")
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/ef04341b-e9a6-42ac-b01c-b7aecbf51b32"
-    width="600"
-  />
-</p>
-
-16. Head to the Audience tab and click +Add users to add the Test users. Add your email here
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/e062463a-26a9-49bc-a64d-309450557b6e"
-    width="600"
-  />
-</p>
-
-
-Get Your Credentials:
-
-17. A popup shows your Client ID and Client Secret; Copy both and/or download the JSON file. You can always view them again in the Credentials page
-
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/8ae5c7ae-0508-4c6d-91ea-0639e1907ec8"
-    width="600"
-  />
-</p>
-
-Next we need to use these to get our access token.
-
-18. Add your downloaded JSON file with the Client ID and Client Secret to <code>client_secret.json</code>
-
-19. Run <code>get_google_access_token.py</code> and it'll output your access token. This will expire in 1 hour! To generate a new token just run the script again!
-
-We can now use the google access tokne in our google calendar mcp server.
-You can either add your access token to the top of your <code>simple_calendar.py</code> file as <code>ACCESS_TOKEN=""</code>, or add it to your <code>.env</code> and load it in.
-
-<br />
-
----
-
-<br />
-
-### 4. Add your MCP server to North
-
-NOTE: Tool names MUST be unique when creating your MCP server, so please prepend the tool name with a prefix such as 
-<code><first_name>_<last_name>_<tool_name></code>
-
-To get your North Token go to https://gtxcc.democloud.cohere.com/developer/python
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/23102dad-1011-4929-8908-c24cf7ce5216"
-    width="600"
-  />
-</p>
-
-Run the following commands:
-
-```bash 
-export NORTH_TOKEN=<north token>
-export HOST=https://gtxcc.democloud.cohere.com/api
-export URL=<ngrok url>
+# e.g.
+ngrok http 3001
 ```
 
-To see which servers are running:
+You will get a public URL like:
+
+- `https://abc123.ngrok-free.app`
+
+## 6) Register / list / delete servers in North
+
+### Get your North token
+
+- https://gtxcc.democloud.cohere.com/developer/python
+
+### Set environment variables
+
+```bash
+export NORTH_TOKEN="<north token>"
+export HOST="https://gtxcc.democloud.cohere.com/api"
+export URL="<ngrok https url>"  # IMPORTANT: do NOT add /mcp
+```
+
+### List registered servers
+
 ```bash
 curl --location "${HOST}/internal/v1/mcp_servers" \
---header "Content-Type: application/json" \
---header "Authorization: Bearer ${NORTH_TOKEN}"
+  --header "Content-Type: application/json" \
+  --header "Authorization: Bearer ${NORTH_TOKEN}"
 ```
 
-To register your server:
+### Register your server
+
 ```bash
 curl --location "${HOST}/internal/v1/mcp_servers" \
---header "Content-Type: application/json" \
---header "Authorization: Bearer ${NORTH_TOKEN}" \
---data '{
+  --header "Content-Type: application/json" \
+  --header "Authorization: Bearer ${NORTH_TOKEN}" \
+  --data '{
     "url": "'"${URL}"'",
-    "name": "Google Calendar"
-}'
+    "name": "My MCP Server"
+  }'
 ```
 
-To delete your server:
+### Delete a server
+
 ```bash
 curl --location --request DELETE "${HOST}/internal/v1/mcp_servers/<server_id>" \
---header "Content-Type: application/json" \
---header "Authorization: Bearer ${NORTH_TOKEN}"
+  --header "Content-Type: application/json" \
+  --header "Authorization: Bearer ${NORTH_TOKEN}"
 ```
 
-Your server is now running!
+### Open North
 
-Sign into North here to try it out!
-You must create a new account with this domain <code>wiseconference.com</code> to have access to North!
+You must create a new account with the domain `wiseconference.com` to have access.
+
+- https://gtxcc.democloud.cohere.com/
+
+---
+
+# Optional: Google Calendar connector (for `simple_calendar.py`)
+
+`simple_calendar.py` talks to the Google Calendar API. For it to work, you need a Google OAuth access token.
+
+## Quick version
+
+1. Put your Google OAuth client credentials file at:
+   - `wise_examples/client_secret.json`
+2. Run the helper to get a Google access token:
 
 ```bash
-https://gtxcc.democloud.cohere.com/
+uv run python get_google_access_token.py
 ```
 
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/1ebba75f-bd1e-4f51-971d-eb1fa9338c58"
-    width="600"
-  />
-</p>
+3. Set the token as an environment variable (recommended):
 
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/717a0e5c-85d9-4c1b-a78b-d90b2b974389"
-    width="600"
-  />
-</p>
+```bash
+export ACCESS_TOKEN="<google access token>"
+uv run python simple_calendar.py
+```
 
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/2f50639f-dac6-49ba-bcd2-37e47055abc1"
-    width="800"
-  />
-</p>
+## Where do I get the OAuth Client ID/Secret?
 
-<p align="center">
-  <img
-    src="https://github.com/user-attachments/assets/b33a1aca-38bf-4860-9350-0f02c95d5a6c"
-    width="700"
-  />
-</p>
+Google’s official docs (recommended):
+- <https://developers.google.com/workspace/guides/create-credentials>
 
+High-level steps:
 
-You'll now be able to see the new connector. Click to enable it!
+1. Go to <https://console.cloud.google.com>
+2. Create/select a project
+3. Enable **Google Calendar API**
+4. Create **OAuth client ID** credentials
+5. Download the JSON and save it as `client_secret.json` in this directory
 
+---
 
-https://github.com/user-attachments/assets/086afa4c-eb1f-45de-84cf-2d8551edfb74
+# Troubleshooting
 
+## “My tools don’t show up in North”
+
+Most common causes:
+
+- Tool names are not unique → set `TOOL_PREFIX` or rename the tool functions.
+- Your server isn’t reachable publicly → confirm ngrok is running and you registered the **https** URL.
+
+## “What URL do I register?”
+
+Register the **base ngrok URL** (no `/mcp`). Example:
+
+- ✅ `https://abc123.ngrok-free.app`
+- ❌ `https://abc123.ngrok-free.app/mcp`
+
+## “Port already in use”
+
+Change the port in the script, or set one via env var if the script supports it.
+
+For `my_mcp_server.py`:
+
+```bash
+export MCP_PORT=3005
+uv run python my_mcp_server.py
+```
